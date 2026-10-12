@@ -67,7 +67,7 @@ $env:APP_ENCRYPTION_KEY = [Convert]::ToBase64String([System.Security.Cryptograph
 
 | 配置项 | 含义与约束 |
 | --- | --- |
-| `DatabaseProviders:Default` | `SqlServer` 或 `PostgreSQL`，默认 `SqlServer` |
+| `DatabaseProviders:Default` | `SqlServer` 或 `PostgreSQL`，默认 `PostgreSQL` |
 | `ConnectionStrings:Default` | 必填业务数据库连接字符串；支持明文或 `enc:v1:` 加密格式 |
 | `JwtConfig:Secret` | JWT 签名密钥，至少 32 个 UTF-8 字节 |
 | `JwtConfig:Issuer` / `Audience` | 必填签发者与受众；开发配置已提供示例值 |

@@ -14,7 +14,7 @@ public static class DatabaseConfiguration
 {
     public static DatabaseProvider ParseProvider(string? value)
     {
-        if (value == null) return DatabaseProvider.SqlServer;
+        if (value == null) return DatabaseProvider.PostgreSQL;
         if (string.Equals(value, "SqlServer", StringComparison.OrdinalIgnoreCase)) return DatabaseProvider.SqlServer;
         if (string.Equals(value, "PostgreSQL", StringComparison.OrdinalIgnoreCase)) return DatabaseProvider.PostgreSQL;
         throw new InvalidOperationException("Database provider must be SqlServer or PostgreSQL.");
