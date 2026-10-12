@@ -1,0 +1,129 @@
+// 架构风险关系图 — MySolution
+// 产出: architecture-visualization:risk-quality-reviewer + graphviz
+// 审查日期: 2026-10-12
+// 渲染: dot -Tsvg risk-map.dot -o risk-map.svg
+//
+// 读图方式: 架构元素(方框) -- harbors --> 风险(菱形) -- degrades --> 质量属性(椭圆)
+// 颜色: 红=高严重度, 橙=中, 黄=低。虚线=推断/未验证关系。
+// 本图回答一个问题: 已发现的风险分别位于哪个架构元素上, 以及它们各自侵蚀哪一项质量属性。
+
+digraph RiskMap {
+    rankdir=TB;
+    fontname="Microsoft YaHei";
+    node [fontname="Microsoft YaHei", fontsize=10];
+    edge [fontname="Microsoft YaHei", fontsize=9];
+    compound=true;
+    nodesep=0.35;
+    ranksep=0.65;
+
+    // ============ 质量属性目标 ============
+    subgraph cluster_qa {
+        label="质量属性目标 (该模板声称提供的价值)";
+        style=rounded;
+        color="#5b7db1";
+        fontsize=11;
+        QA_verifiability [label="可验证性\n架构约束由测试守卫", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        QA_maintainability [label="可维护性\n分层清晰, 文档可信", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        QA_security [label="安全性\n认证授权不可绕过", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        QA_reliability [label="可靠性\n事务与并发正确", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        QA_operability [label="可运维性\n探针/日志/容量可预期", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        QA_reusability [label="可复用性\n下游可直接采用", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+    }
+
+    // ============ 架构元素 ============
+    subgraph cluster_elements {
+        label="架构元素 (证据锚点)";
+        style=rounded;
+        color="#7f7f7f";
+        fontsize=11;
+        EL_pipeline [label="交付流水线\n(不存在 .github/CI)", shape=box, style="filled,dashed", fillcolor="#f2f2f2"];
+        EL_tests [label="测试体系\nUnitTest 27 + IntegrationTest 29", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_docs [label="架构文档\ndocs/Architecture.md", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_infra [label="Infrastructure\nCachedPermissionStore", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_persistence [label="Persistence\nAccessControlTransaction\nMenuReadRepository\nMigrationRunner", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_apis [label="APIs\nProgram / Controllers\nWebSecurityRegistration", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_app [label="Application\nUseCaseAuthorization\nApplicationRegistration", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_config [label="配置与依赖清单\nappsettings*.json\nDirectory.Packages.props", shape=box, style=filled, fillcolor="#e2efda"];
+        EL_health [label="健康检查\nMenuSchemaHealthCheck", shape=box, style=filled, fillcolor="#e2efda"];
+    }
+
+    // ============ 已确认风险 ============
+    R_H1 [label="H1 仓库带红测试且无 CI\n权限缓存 DI 测试失败\nPermissionCacheTests.cs:31\n置信度 high", shape=diamond, style=filled, fillcolor="#f8cbad", color="#c00000", penwidth=2];
+    R_H2 [label="H2 文档与代码矛盾\nRedis 降级已实现但文档否认\nArchitecture.md:150\n置信度 high", shape=diamond, style=filled, fillcolor="#f8cbad", color="#c00000", penwidth=2];
+    R_M1 [label="M1 数据库测试全部不可判定\n8/29 跳过, 覆盖事务与并发\nPostgresFixture.cs:26-29\n置信度 high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M2 [label="M2 前置通配 LIKE + 零索引\nMenuReadRepository.cs:40\n000_menu_schema:7,20\n置信度 high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M3 [label="M3 就绪探针被写锁阻塞\nMenuSchemaHealthCheck.cs:18\n置信度 medium-high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M4 [label="M4 全局单行锁串行化\n无锁等待超时\nAccessControlTransaction.cs:58-63\n置信度 high (文档已承认取舍)", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M5 [label="M5 白名单静默放权\nUseCaseAuthorization.cs:33-34\n置信度 high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M6 [label="M6 内部标识泄漏\nappsettings.Production.json:9\n置信度 high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_M7 [label="M7 死包 + Serilog 增强器静默失效\n5 个零引用包 / 3 个缺失增强器\n置信度 high", shape=diamond, style=filled, fillcolor="#ffe699"];
+    R_L [label="L1-L13 低严重度集合\n死目录 / 死中间件 / 死启动 URL\n无外键 / 可空性矛盾 / 令牌重放\n单钥复用 / 无迁移回滚", shape=diamond, style=filled, fillcolor="#fff2cc"];
+
+    // ============ 根因: 单次变更造成三处不一致 ============
+    CAUSE [label="根因 (推断)\n为 CachedPermissionStore 加入\nRedis 降级与 ILogger 依赖的\n同一次变更", shape=note, style=filled, fillcolor="#fce4d6", color="#833c00"];
+
+    // ---- harbors 关系 ----
+    EL_pipeline -> R_H1 [label="未拦截", color="#c00000", penwidth=1.5];
+    EL_tests -> R_H1 [label="失败用例所在", color="#c00000"];
+    EL_docs -> R_H2 [label="滞后于代码", color="#c00000"];
+    EL_infra -> R_H2 [label="实际行为所在", color="#c00000"];
+    EL_tests -> R_M1 [label="跳过用例所在"];
+    EL_persistence -> R_M1 [label="被测对象"];
+    EL_persistence -> R_M2 [label="查询与建模"];
+    EL_health -> R_M3 [label="探针实现"];
+    EL_persistence -> R_M4 [label="锁实现"];
+    EL_app -> R_M5 [label="授权实现"];
+    EL_config -> R_M6 [label="泄漏位置"];
+    EL_config -> R_M7 [label="声明与清单不一致"];
+    EL_apis -> R_L [label="死中间件/死启动 URL"];
+    EL_persistence -> R_L [label="无外键/无迁移回滚"];
+
+    // ---- 根因链 (虚线 = 推断) ----
+    CAUSE -> R_H1 [label="导致", style=dashed, color="#833c00"];
+    CAUSE -> R_H2 [label="导致", style=dashed, color="#833c00"];
+    R_H1 -> R_M1 [label="同一根因: 无闸门\n故跳过状态可长期存在", style=dashed, color="#833c00"];
+
+    // ---- degrades 关系 ----
+    R_H1 -> QA_verifiability [label="侵蚀", color="#c00000", penwidth=1.5];
+    R_H1 -> QA_reusability [label="侵蚀", color="#c00000"];
+    R_H2 -> QA_maintainability [label="侵蚀", color="#c00000", penwidth=1.5];
+    R_H2 -> QA_operability [label="误导容量判断", color="#c00000"];
+    R_M1 -> QA_reliability [label="声明未获验证"];
+    R_M1 -> QA_verifiability [label="守卫失效"];
+    R_M2 -> QA_operability [label="数据量增长后劣化"];
+    R_M3 -> QA_operability [label="探针误判导致摘流"];
+    R_M3 -> QA_reliability [label="长事务回滚", style=dashed];
+    R_M4 -> QA_reliability [label="容量上限未量化"];
+    R_M5 -> QA_security [label="配置误填即放权"];
+    R_M6 -> QA_reusability [label="脱敏不完整"];
+    R_M6 -> QA_security [label="内部拓扑暴露", style=dashed];
+    R_M7 -> QA_operability [label="日志上下文缺失"];
+    R_M7 -> QA_reusability [label="技术栈信号错误"];
+    R_L -> QA_maintainability [label="噪音与约定漂移"];
+
+    // ---- 已守住的边界 (说明整改时不可破坏) ----
+    GUARD [label="已守住的边界 (整改时勿破坏)\n依赖方向向内: ArchitectureTests.cs:57-87\n领域层纯净: ArchitectureTests.cs:15-25\nIL 级越界扫描: ArchitectureBoundaryTests.cs:29-104\n权限缓存 revision-in-key: CachedPermissionStore.cs:44-49\n事务回滚语义: AtomicWrite.cs:14-27\n迁移校验和: MigrationRunner.cs:43,90", shape=box3d, style=filled, fillcolor="#e2efda", color="#548235"];
+    EL_tests -> GUARD [label="当前实现", color="#548235"];
+    GUARD -> QA_security [label="支撑", color="#548235"];
+    GUARD -> QA_maintainability [label="支撑", color="#548235"];
+    GUARD -> QA_reliability [label="支撑", color="#548235"];
+    R_H1 -> GUARD [label="可信度受损", color="#c00000", style=dashed, penwidth=1.5];
+
+    // ============ 图例 ============
+    subgraph cluster_legend {
+        label="图例";
+        style=rounded;
+        color="#bfbfbf";
+        fontsize=10;
+        LG_elem [label="架构元素", shape=box, style=filled, fillcolor="#e2efda"];
+        LG_riskH [label="高严重度风险", shape=diamond, style=filled, fillcolor="#f8cbad", color="#c00000", penwidth=2];
+        LG_riskM [label="中严重度风险", shape=diamond, style=filled, fillcolor="#ffe699"];
+        LG_riskL [label="低严重度风险", shape=diamond, style=filled, fillcolor="#fff2cc"];
+        LG_qa [label="质量属性", shape=ellipse, style=filled, fillcolor="#dce6f1"];
+        LG_cause [label="推断的根因", shape=note, style=filled, fillcolor="#fce4d6"];
+        LG_solid [label="直接代码证据", shape=point, width=0.05];
+        LG_dashed [label="虚线 = 推断/未实测", shape=point, width=0.05];
+        LG_elem -> LG_riskM [label="harbors", style=invis];
+        LG_solid -> LG_dashed [label="实线=实测/代码证据", style=dashed];
+    }
+}

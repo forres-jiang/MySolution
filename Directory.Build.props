@@ -1,0 +1,6 @@
+<Project>
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);1701;1702;CA1822;</NoWarn>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+</Project>

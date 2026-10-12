@@ -1,0 +1,15 @@
+# 将此文件作为配置查找的根，停止继承上级目录的 .editorconfig。
+root = true
+
+# 以下配置应用于当前目录及其子目录中的所有 C# 文件。
+[*.cs]
+# 禁用 IDE0290 诊断，不提示将普通构造函数转换为主构造函数。
+dotnet_diagnostic.IDE0290.severity = none
+# 要求可省略大括号的语句也使用大括号，包括单行语句。
+csharp_prefer_braces = true
+# 将缺少大括号的 IDE0011 诊断设为警告。
+dotnet_diagnostic.IDE0011.severity = warning
+# 使用 LF（换行符）作为行尾格式。
+end_of_line = lf
+# 使用不带 BOM 的 UTF-8 编码保存文件。
+charset = utf-8
