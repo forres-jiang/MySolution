@@ -135,8 +135,6 @@ JWT 验证通过后仍调用 `ISessionService.ValidateAsync` 查询数据库，�
 
 `PermissionCodes` 定义稳定且受保护的权限码目录。角色权限存储在 `RolePermission` 中，角色菜单选择存储在 `RoleMenu` 中；菜单选择不会自动等同于接口操作权限。
 
-HTTP 的权限特性及处理器与应用用例共享 `UseCaseAuthorization`。该服务先要求已认证用户和合法权限码，再判断 `AppAdmin`、权限白名单或角色权限。白名单不会放行匿名请求，管理员身份也不会放行未定义的权限码。`RequireAnyAsync` 接受多个权限码时采用满足任一项的语义；组合用例需要分别检查必需权限。
-
 权限缓存装饰在 `IPermissionStore` 下方，缓存角色集合对应的权限投影：
 
 1. 从数据库读取 `PermissionRevision`。

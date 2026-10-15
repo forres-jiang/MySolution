@@ -24,7 +24,5 @@ public static class WebOptionsRegistration
             .Validate(o => o.ExpiryInMinutes > 0 && !string.IsNullOrWhiteSpace(o.KeyPrefix),
                 "PermissionCache needs a positive expiry and a key prefix.")
             .ValidateOnStart();
-        // 保留现有配置节名称，授权配置统一交由应用层读取。
-        services.Configure<My.XXX.Application.Authorization.PermissionAccessOptions>(configuration.GetSection("PermissionWhitelist"));
     }
 }

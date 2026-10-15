@@ -11,7 +11,6 @@ internal static class AccessControlRegistration
 {
     internal static void AddAccessControlUseCases(this IServiceCollection services)
     {
-        services.AddOptions<PermissionAccessOptions>();
         services.AddScoped<UseCaseAuthorization>();
         services.AddSingleton<ApplicationMapper>();
         services.AddScoped<MenuCommandService>();

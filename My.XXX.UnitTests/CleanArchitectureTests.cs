@@ -55,15 +55,6 @@ public sealed class CleanArchitectureTests
     }
 
     [TestMethod]
-    public async Task WhitelistNeverAllowsAnonymousCallers()
-    {
-        Assert.IsTrue((await AuthorizationTestSupport.Whitelisted(null, PermissionCodes.MenuEdit)
-            .RequireAnyAsync(default, PermissionCodes.MenuEdit)).IsFailed);
-        Assert.IsTrue((await AuthorizationTestSupport.Whitelisted(new() { UserId = "alice" }, PermissionCodes.MenuEdit)
-            .RequireAnyAsync(default, PermissionCodes.MenuEdit)).IsSuccess);
-    }
-
-    [TestMethod]
     public void MenuTransitionPreservesSnapshotAndValidatesClearingAndHierarchy()
     {
         var rows = new List<MenuState> { new() { Id = 1, DisplayName = "root", Description = "keep", Icon = "old" }, new() { Id = 2, ParentId = 1 } };

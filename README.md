@@ -77,7 +77,6 @@ $env:APP_ENCRYPTION_KEY = [Convert]::ToBase64String([System.Security.Cryptograph
 | `AppConfig:PermissionDataCache` | `0` 不启用权限缓存，`1` 使用 Redis |
 | `RedisConfig:ConnectionString` | Redis 连接，支持明文或 `enc:v1:` 加密格式 |
 | `PermissionCache:KeyPrefix` / `ExpiryInMinutes` | 缓存键前缀及有效期，默认有效期 5 分钟 |
-| `PermissionWhitelist:Codes` | 权限码白名单配置，不允许匿名访问 |
 | `AllowedHostArray` | 跨域允许的来源列表 |
 | `DataProtection:KeyPath` | 数据保护密钥目录，默认位于应用目录的 `keys` 下 |
 
