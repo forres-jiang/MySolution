@@ -18,12 +18,10 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var requestId = Guid.NewGuid();
         var traceId = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier;
 
         context.TraceIdentifier = traceId;
         context.Response.Headers["X-Request-Id"] = traceId;
-        context.Items["request_id"] = requestId;
 
         try
         {
@@ -36,7 +34,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception for {Method} {Path} (RequestId={RequestId})",
-                context.Request.Method, context.Request.Path, requestId);
+                context.Request.Method, context.Request.Path, traceId);
 
             if (context.Response.HasStarted)
             {
@@ -44,6 +42,7 @@ public sealed class ExceptionHandlingMiddleware : IMiddleware
             }
             else
             {
+                // Clear() 会连同响应头一起清除，因此关联 ID 必须重新写入。
                 context.Response.Clear();
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 context.Response.Headers["X-Request-Id"] = traceId;
