@@ -29,7 +29,6 @@
     <PackageReference Include="linq2db.SqlServer" ExcludeAssets="contentFiles" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>
