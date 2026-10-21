@@ -14,15 +14,10 @@ bin
 .test-artifacts/
 
 # 运行期产物与本地文件
-/EnGo.XXX.APIs/logs
-/EnGo.XXX.APIs/xxx2022030816.txt
-/EnGo.XXX.APIs/.config
-/EnGo.XXX.APIs/wwwroot/xxx.tar
-/EnGo.XXX.APIs/UI
+**/logs/
 **/keys/
 **/Common/DataProtection/key-*.xml
 *.secrets.json
 
 # 生成的 XML 文档产物
-/EnGo.XXX.APIs/EnGo.XXX.APIs.xml
-/EnGo.XXX.Application/EnGo.XXX.Application.xml
+**/My.XXX.APIs.xml

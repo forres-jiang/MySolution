@@ -25,6 +25,8 @@ public sealed class PermissionCacheTests
             var store = new Store();
             var cache = new Cache();
             var services = new ServiceCollection().AddApplicationServices();
+            // CachedPermissionStore 依赖 ILogger<T>；最小化容器需显式提供日志实现，与下方 Decorate() 传 NullLogger 的做法等价。
+            services.AddLogging();
             services.AddSingleton<IPermissionStore>(store);
             services.AddSingleton<IPermissionCache>(cache);
             services.AddSingleton<IOptions<PermissionCacheOptions>>(Options.Create(new PermissionCacheOptions()));

@@ -56,7 +56,6 @@
     <PackageReference Include="Polly" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Expressions" />
-    <PackageReference Include="Serilog.Sinks.Splunk" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
