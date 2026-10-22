@@ -5,6 +5,7 @@ using My.XXX.Application.Authorization.Ports;
 using My.XXX.Infrastructure;
 using My.XXX.Infrastructure.Caching;
 using My.XXX.Persistence;
+using My.XXX.ServiceDefaults;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -60,6 +61,10 @@ public class Program
         configure?.Invoke(builder);
 
         var telemetryEnabled = builder.AddProjectTelemetry();
+
+        // Aspire 通用接线：健康检查（/alive、/health）、服务发现、HttpClient 弹性。
+        // OTel 仍由上面的 AddProjectTelemetry 负责，避免重复注册。
+        builder.AddServiceDefaults();
 
         //Serilog
         builder.Host.UseSerilog((context, logger) =>
@@ -117,6 +122,8 @@ public class Program
         {
             Predicate = check => check.Tags.Contains("ready")
         }).AllowAnonymous();
+        // Aspire 约定的 /alive 与 /health 探针，与项目原有 /healthy、/ready 并存。
+        app.MapDefaultEndpoints();
         return app;
     }
 

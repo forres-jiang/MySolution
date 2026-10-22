@@ -40,6 +40,20 @@
 
 ## 本地启动
 
+### 方式 A（推荐）：Aspire AppHost 一键启动
+
+需要本机已安装 Docker Desktop / Podman。AppHost 会自动拉起 PostgreSQL、Redis 容器、API 项目和 Aspire Dashboard：
+
+```powershell
+dotnet run --project My.XXX.AppHost/09My.XXX.AppHost.csproj
+```
+
+启动后浏览器会自动打开 Aspire Dashboard（默认 `http://localhost:17xxx`），可查看资源状态、Traces、Metrics、Logs。API 端点会在 Dashboard 中列出，点击即可访问 Swagger。
+
+AppHost 会以环境变量形式向 API 注入 `ConnectionStrings__postgres` 与 `ConnectionStrings__redis`；如果代码里读取的是 `ConnectionStrings:Default` 或 `RedisConfig:ConnectionString`，请在 API 侧做一层映射或在 `appsettings.Development.json` 中显式引用。
+
+### 方式 B：手动启动（不依赖容器）
+
 ### 1. 准备环境
 
 安装兼容的 .NET 10 SDK，并准备可连接的 SQL Server 或 PostgreSQL 数据库。只有启用 Redis 权限缓存时才需要 Redis。

@@ -65,6 +65,7 @@
     <ProjectReference Include="..\My.XXX.Persistence\04My.XXX.Persistence.csproj" />
     <ProjectReference Include="..\My.XXX.Infrastructure\05My.XXX.Infrastructure.csproj" />
     <ProjectReference Include="..\My.XXX.Application\02My.XXX.Application.csproj" />
+    <ProjectReference Include="..\My.XXX.ServiceDefaults\08My.XXX.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
