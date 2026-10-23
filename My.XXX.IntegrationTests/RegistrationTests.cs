@@ -1,6 +1,7 @@
 using My.XXX.APIs;
 using My.XXX.APIs.Common.Authorization;
 using My.XXX.Application.Authentication.Ports;
+using My.XXX.Application.AccessControl.Ports;
 using My.XXX.Application.Authorization;
 using My.XXX.Application.Authorization.Ports;
 using My.XXX.Application.Menus;
@@ -53,6 +54,10 @@ public sealed class RegistrationTests
         });
         await using var scope = app.Services.CreateAsyncScope();
         var provider = scope.ServiceProvider;
+        var transaction = provider.GetRequiredService<IAccessControlTransaction>();
+        Assert.AreSame(transaction, provider.GetRequiredService<IMenuTransaction>());
+        Assert.AreSame(transaction, provider.GetRequiredService<IRoleMenuTransaction>());
+        Assert.AreSame(transaction, provider.GetRequiredService<IPermissionTransaction>());
         foreach (var service in new[] { typeof(MenuCommandService), typeof(MenuQueryService), typeof(RoleAccessAdministration),
             typeof(RoleMenuAssignmentService), typeof(IPermissionAdministration), typeof(IPermissionQuery),
             typeof(IAuthenticationService), typeof(ISessionService) })

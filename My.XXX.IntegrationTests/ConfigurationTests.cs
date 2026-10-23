@@ -1,5 +1,7 @@
 using My.XXX.APIs;
 using My.XXX.Infrastructure.Security;
+using My.XXX.Persistence.Mapping;
+using My.XXX.Domain.Authentication.Models;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,25 @@ namespace My.XXX.IntegrationTests;
 [TestClass]
 public sealed class ConfigurationTests
 {
+    [TestMethod]
+    public void IdentitySnapshotsRejectInvalidIdentifiersAndRetainLegacyCompatibility()
+    {
+        foreach (var json in new[] { "{}", "{\"UserId\":\" \"}", "{\"Version\":2,\"UserId\":\"alice\"}",
+            JsonSerializer.Serialize(new { UserId = new string('x', UserIdentity.MaxUserIdLength + 1) }) })
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => IdentitySnapshot.Read(json));
+        }
+
+        var legacy = IdentitySnapshot.Read("{\"UserId\":\"alice\",\"Roles\":null,\"RoleIds\":null}");
+        Assert.AreEqual("alice", legacy.UserId);
+        Assert.IsNull(legacy.UserName);
+        Assert.IsNull(legacy.Email);
+        Assert.AreEqual(0, legacy.Roles.Count);
+        Assert.AreEqual(0, legacy.RoleIds.Count);
+        var restored = IdentitySnapshot.Read(IdentitySnapshot.Write(legacy));
+        Assert.AreEqual(legacy.UserId, restored.UserId);
+    }
+
     [TestMethod]
     public void EncryptionKeysAreValidatedAndIsolatedPerApplication()
     {

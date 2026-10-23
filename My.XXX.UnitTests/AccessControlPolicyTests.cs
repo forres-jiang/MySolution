@@ -16,7 +16,7 @@ public sealed class AccessControlPolicyTests
     [TestMethod]
     public void ParentCanOnlyBeDeletedWithItsChildren()
     {
-        var menus = new List<MenuState> { new() { Id = 1 }, new() { Id = 2, ParentId = 1 } };
+        var menus = new List<MenuState> { new() { Id = 1, DisplayName = "root", CreatedBy = "test" }, new() { Id = 2, ParentId = 1, DisplayName = "child", CreatedBy = "test" } };
         var failure = MenuRemoval.Validate(menus, new[] { 1 });
         Assert.AreEqual("Menu.HasChildren", ((BusinessError)failure.Errors.Single()).Code);
         Assert.IsTrue(MenuRemoval.Validate(menus, new[] { 1, 2, 2 }).IsSuccess);

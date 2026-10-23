@@ -54,7 +54,7 @@ public sealed class ApplicationBoundaryTests
 
     private sealed class Transaction : IAccessControlTransaction
     {
-        public string Scope;
+        public string? Scope;
         private Task<Result> Select(string scope) { Scope = scope; return Task.FromResult(Result.Ok()); }
         public Task<Result> Execute(Func<IAccessControlWriteSession, Task<Result>> operation, CancellationToken cancellationToken = default) => Select("combined");
         public Task<Result> ExecuteMenus(Func<IMenuWriteSession, Task<Result>> operation, CancellationToken cancellationToken = default) => Select("menus");

@@ -45,6 +45,7 @@ public sealed class MenuUseCaseTests
         var result = await service.Update(new MenuModification { Id = 2, DisplayName = " updated " });
         Assert.IsTrue(result.IsSuccess);
         Assert.AreEqual(1, storage.Writes);
+        Assert.IsNotNull(storage.Written);
         Assert.AreEqual("updated", storage.Written.DisplayName);
         Assert.AreEqual("alice", storage.Written.UpdatedBy);
         Assert.AreEqual(clock.GetUtcNow().UtcDateTime, storage.Written.UpdatedAt);
@@ -75,6 +76,7 @@ public sealed class MenuUseCaseTests
         var service = new MenuCommandService(storage, AuthorizationTestSupport.Admin(), new FixedClock());
         var result = await service.Update(new MenuModification { Id = 2, ControllerName = " new-resource ", ClearFields = new() { "url", "Component" } });
         Assert.IsTrue(result.IsSuccess);
+        Assert.IsNotNull(storage.Written);
         Assert.IsNull(storage.Written.Destination.Address);
         Assert.IsNull(storage.Written.Destination.View);
         Assert.AreEqual("new-resource", storage.Written.Destination.Resource);
@@ -84,6 +86,25 @@ public sealed class MenuUseCaseTests
         Assert.IsNull(view.Url);
         Assert.AreEqual("new-resource", view.ControllerName);
         Assert.AreEqual("_blank", view.LinkTarget);
+    }
+
+    [TestMethod]
+    public async Task ReorderingOnlyWritesChangedPositionsAndPreservesUnchangedAudit()
+    {
+        var storage = new Menus();
+        var original = storage.Rows[1] with { Number = 0 };
+        storage.Rows[1] = original;
+        storage.Rows.Add(original with { Id = 3, Number = 1 });
+        storage.Rows.Add(original with { Id = 4, Number = 2 });
+        var clock = new FixedClock();
+        var service = new MenuCommandService(storage, AuthorizationTestSupport.Admin(), clock);
+
+        Assert.IsTrue((await service.UpdateSort(new MenuReorderCommand(2, 0, 3))).IsSuccess);
+        Assert.AreEqual(0, storage.Writes);
+        Assert.IsTrue((await service.UpdateSort(new MenuReorderCommand(2, 3, 4))).IsSuccess);
+        CollectionAssert.AreEquivalent(new[] { 2, 3 }, storage.Updates.Select(menu => menu.Id).ToArray());
+        Assert.IsTrue(storage.Updates.All(menu => menu.UpdatedAt == clock.GetUtcNow().UtcDateTime));
+        Assert.IsNull(storage.Rows.Single(menu => menu.Id == 4).UpdatedAt);
     }
 
     private sealed class CurrentUser : ICurrentUser
@@ -97,10 +118,11 @@ public sealed class MenuUseCaseTests
     }
     private sealed class Menus : IAccessControlTransaction, IMenuWriteSession, IMenuReadRepository
     {
-        public List<MenuState> Rows = new() { new() { Id = 1, DisplayName = "root" }, new() { Id = 2, ParentId = 1 } };
+        public List<MenuState> Rows = new() { new() { Id = 1, CreatedBy = "test", DisplayName = "root" }, new() { Id = 2, ParentId = 1, DisplayName = "child", CreatedBy = "test" } };
         public bool Entered;
         public int Writes;
-        public MenuState Written;
+        public MenuState? Written;
+        public List<MenuState> Updates { get; } = new();
         public async Task<Result> ExecuteMenus(Func<IMenuWriteSession, Task<Result>> operation, CancellationToken cancellationToken = default)
         {
             Entered = true;
@@ -115,7 +137,13 @@ public sealed class MenuUseCaseTests
             Task.FromResult(Rows.Select(m => new MenuStructure(m.Id, m.ParentId, m.IsAction)).ToList());
         public Task<MenuState?> LoadMenu(int id, CancellationToken cancellationToken = default) => Get(id, cancellationToken);
         public Task<int> Insert(MenuState menu, CancellationToken cancellationToken = default) { Writes++; Written = menu; return Task.FromResult(1); }
-        public Task<int> Update(MenuState menu, CancellationToken cancellationToken = default) { Writes++; Written = menu; return Task.FromResult(1); }
+        public Task<int> Update(MenuState menu, CancellationToken cancellationToken = default)
+        {
+            Writes++;
+            Written = menu;
+            Updates.Add(menu);
+            return Task.FromResult(1);
+        }
         public Task<int> Remove(List<int> ids, string userId, DateTime timestamp, CancellationToken cancellationToken = default) { Writes++; return Task.FromResult(ids.Count); }
         public Task<MenuState?> Get(int id, CancellationToken cancellationToken = default) => Task.FromResult(Rows.SingleOrDefault(row => row.Id == id));
         public Task<Paged<MenuState>> Search(MenuSearch query, CancellationToken cancellationToken = default) => Task.FromResult(Paged<MenuState>.Create(Rows, Rows.Count));

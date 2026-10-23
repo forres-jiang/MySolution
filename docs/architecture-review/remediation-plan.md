@@ -1,5 +1,7 @@
 # 整改计划
 
+> 历史整改计划，保留当时的发现与建议，不作为当前待办清单。2026-10-23 已完成的优化及验证见 [优化记录](optimization-2026-10-23.md)，当前行为见 [架构说明](../Architecture.md)。
+
 - **配套文档**：`architecture-review.md`（发现与证据）、`quality-scenarios.md`（验收场景）
 - **产出技能**：`architecture-visualization:risk-quality-reviewer`
 - **日期**：2026-10-12

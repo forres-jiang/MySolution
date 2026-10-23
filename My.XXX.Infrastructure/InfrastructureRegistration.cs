@@ -17,11 +17,14 @@ public static class InfrastructureRegistration
     public static bool AddPermissionCaching(this IServiceCollection services, string? connectionString, bool enabled)
     {
         services.AddOptions<PermissionCacheOptions>();
-        if (string.IsNullOrWhiteSpace(connectionString))
+        if (!enabled)
         {
-            if (enabled) throw new InvalidOperationException("Redis permission caching requires RedisConfig:ConnectionString.");
             services.AddSingleton<IPermissionCache, NullPermissionCache>();
             return false;
+        }
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("启用权限缓存时必须配置 RedisConfig:ConnectionString。");
         }
         var options = ConfigurationOptions.Parse(connectionString);
         options.AbortOnConnectFail = false;

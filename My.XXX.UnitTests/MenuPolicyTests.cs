@@ -23,7 +23,7 @@ public sealed class MenuPolicyTests
     [TestMethod]
     public void MovingParentBelowDescendantIsRejected()
     {
-        var menus = new List<MenuState> { new() { Id = 1 }, new() { Id = 2, ParentId = 1 } };
+        var menus = new List<MenuState> { new() { Id = 1, DisplayName = "root", CreatedBy = "test" }, new() { Id = 2, ParentId = 1, DisplayName = "child", CreatedBy = "test" } };
         Assert.IsFalse(MenuHierarchy.CanPlace(menus, 1, 2, false));
         Assert.IsTrue(MenuHierarchy.CanPlace(menus, 2, 0, false));
     }
@@ -31,7 +31,7 @@ public sealed class MenuPolicyTests
     [TestMethod]
     public void ActionCannotBeRootOrParent()
     {
-        var menus = new List<MenuState> { new() { Id = 1, IsAction = true } };
+        var menus = new List<MenuState> { new() { Id = 1, IsAction = true, DisplayName = "action", CreatedBy = "test" } };
         Assert.IsFalse(MenuHierarchy.CanPlace(menus, 2, 0, true));
         Assert.IsFalse(MenuHierarchy.CanPlace(menus, 2, 1, false));
     }

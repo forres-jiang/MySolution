@@ -60,7 +60,9 @@ public sealed class ArchitectureTests
         Check("Application", new[] { "Domain" });
         Check("Persistence", new[] { "Domain", "Application" });
         Check("Infrastructure", new[] { "Domain", "Application" });
-        Check("APIs", new[] { "Domain", "Application", "Persistence", "Infrastructure" });
+        Check("APIs", new[] { "Domain", "Application", "Persistence", "Infrastructure", "ServiceDefaults" });
+        Check("ServiceDefaults", Array.Empty<string>());
+        Check("AppHost", new[] { "APIs" });
         Check("UnitTests", new[] { "Domain", "Application" });
         Check("IntegrationTests", new[] { "APIs" });
     }

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace My.XXX.Application.Authorization;
 
-/// <summary>Replace menu selection and permission codes as one atomic use case.</summary>
+/// <summary>在同一事务中替换菜单选择与权限码。</summary>
 public sealed class RoleAccessAdministration(IAccessControlTransaction transaction, UseCaseAuthorization authorization, TimeProvider clock)
 {
     private readonly RoleMenuMutations menus = new(clock);
@@ -26,12 +26,20 @@ public sealed class RoleAccessAdministration(IAccessControlTransaction transacti
         var validation = RoleMenuChanges.Validate(roleId, menuIds, RoleMenuChange.Replace).ToResult();
         if (validation.IsSuccess) validation = PermissionSelection.Validate(roleId, codes).ToResult();
         if (validation.IsFailed) return validation;
-        return await transaction.Execute(async session =>
+        var result = await transaction.Execute(async session =>
         {
-            var result = await menus.SetRoleMenus(session, roleId, menuIds, RoleMenuChange.Replace,
+            var menuResult = await menus.SetRoleMenus(session, roleId, menuIds, RoleMenuChange.Replace,
                 access.Value.UserId, cancellationToken);
-            if (result.IsFailed) return result;
+            if (menuResult.IsFailed)
+            {
+                return menuResult;
+            }
             return await permissions.ReplaceAsync(session, roleId, codes, cancellationToken);
         }, cancellationToken);
+        if (result.IsSuccess)
+        {
+            authorization.InvalidatePermissions();
+        }
+        return result;
     }
 }

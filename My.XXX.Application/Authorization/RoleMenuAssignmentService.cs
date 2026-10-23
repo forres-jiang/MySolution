@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace My.XXX.Application.Authorization;
 
-public sealed class RoleMenuAssignmentService(IAccessControlTransaction transaction, UseCaseAuthorization authorization, TimeProvider clock)
+public sealed class RoleMenuAssignmentService(IRoleMenuTransaction transaction, UseCaseAuthorization authorization, TimeProvider clock)
 {
     private readonly RoleMenuMutations mutations = new(clock);
 

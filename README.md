@@ -22,6 +22,8 @@
 | `My.XXX.Domain` | 菜单层级、排序、删除约束、权限码与领域结果；不依赖其他项目 |
 | `My.XXX.Persistence` | 基于 LINQ to DB 的数据库访问、事务、持久化模型、迁移和数据库健康检查 |
 | `My.XXX.Infrastructure` | Redis 缓存、AES 加密、会话指标等技术实现 |
+| `My.XXX.ServiceDefaults` | 服务发现、HTTP 弹性与通用健康端点，不依赖业务项目 |
+| `My.XXX.AppHost` | 本地资源编排、配置注入与迁移完成后的服务启动 |
 | `My.XXX.UnitTests` | 领域规则、用例授权和架构边界测试 |
 | `My.XXX.IntegrationTests` | 数据库事务、迁移、缓存、配置、HTTP 契约和遥测测试 |
 | `observability` | OpenTelemetry Collector 配置示例 |
@@ -31,7 +33,7 @@
 ## 技术栈
 
 - .NET 10、ASP.NET Core、JWT Bearer、Swagger / OpenAPI。
-- LINQ to DB，支持 SQL Server 和 PostgreSQL，默认选择 SQL Server。
+- LINQ to DB，支持 SQL Server 和 PostgreSQL，默认选择 PostgreSQL。
 - StackExchange.Redis、FluentResults、Mapperly、Scrutor。
 - Serilog、OpenTelemetry，支持日志、链路追踪、指标和可选 OTLP 导出。
 - MSTest、Coverlet，以及基于 .NET 10 Alpine 镜像的多阶段 Docker 构建。
@@ -42,7 +44,14 @@
 
 ### 方式 A（推荐）：Aspire AppHost 一键启动
 
-需要本机已安装 Docker Desktop / Podman。AppHost 会自动拉起 PostgreSQL、Redis 容器、API 项目和 Aspire Dashboard：
+需要本机已安装并启动 Docker Desktop、Rancher Desktop 或兼容的容器引擎。首次运行前，在 AppHost 的用户机密中保存稳定密钥（JWT 密钥至少 32 个 UTF-8 字节；加密密钥为 32 字节的 Base64 编码）：
+
+```powershell
+dotnet user-secrets set 'Parameters:jwt-secret' '<JWT签名密钥>' --project My.XXX.AppHost/09My.XXX.AppHost.csproj
+dotnet user-secrets set 'Parameters:encryption-key' '<32字节密钥的Base64编码>' --project My.XXX.AppHost/09My.XXX.AppHost.csproj
+```
+
+随后启动 AppHost，自动拉起 PostgreSQL、Redis、数据库迁移进程、API 和 Aspire Dashboard：
 
 ```powershell
 dotnet run --project My.XXX.AppHost/09My.XXX.AppHost.csproj
@@ -50,7 +59,7 @@ dotnet run --project My.XXX.AppHost/09My.XXX.AppHost.csproj
 
 启动后浏览器会自动打开 Aspire Dashboard（默认 `http://localhost:17xxx`），可查看资源状态、Traces、Metrics、Logs。API 端点会在 Dashboard 中列出，点击即可访问 Swagger。
 
-AppHost 会以环境变量形式向 API 注入 `ConnectionStrings__postgres` 与 `ConnectionStrings__redis`；如果代码里读取的是 `ConnectionStrings:Default` 或 `RedisConfig:ConnectionString`，请在 API 侧做一层映射或在 `appsettings.Development.json` 中显式引用。
+AppHost 将数据库连接直接注入 `ConnectionStrings__Default`，将 Redis 连接注入 `RedisConfig__ConnectionString`，并显式选择 PostgreSQL 与 Redis 权限缓存。迁移进程只依赖数据库，API 等迁移成功退出后启动；Redis 启动或运行故障允许权限查询回退数据库。正常手动启动 API 仍不会自动迁移。
 
 ### 方式 B：手动启动（不依赖容器）
 
@@ -112,7 +121,7 @@ dotnet run --project My.XXX.APIs/01My.XXX.APIs.csproj --no-launch-profile -- --m
 dotnet run --project My.XXX.APIs/01My.XXX.APIs.csproj --no-launch-profile -- --urls http://localhost:5000
 ```
 
-开发环境可访问 `http://localhost:5000/swagger`。现有启动配置中的 `api/Demo/Index` 没有对应控制器，应使用 Swagger 查看当前接口。
+开发环境可访问 `http://localhost:5000/swagger`。开发启动配置默认打开 Swagger，生产与容器启动配置使用存活检查地址。
 
 ## 接口概览
 
@@ -126,9 +135,11 @@ dotnet run --project My.XXX.APIs/01My.XXX.APIs.csproj --no-launch-profile -- --u
 | `DELETE /api/User/Session` | 撤销当前会话 |
 | `GET /api/User/GetRoles` | 返回当前用户信息 |
 | `GET /healthy` | 匿名存活检查，不检查外部依赖 |
-| `GET /ready` | 匿名就绪检查，检查数据库、所需迁移与表结构，以及启用缓存时的 Redis |
+| `GET /ready` | 匿名就绪检查，检查数据库、所需迁移与表结构 |
+| `GET /health` | 匿名完整诊断，启用缓存时包含 Redis；Redis 故障报告 Degraded，默认返回 HTTP 200 |
+| `GET /alive` | 匿名存活检查，与 `/healthy` 同样不依赖外部服务 |
 
-业务接口默认要求身份认证，菜单和权限接口还校验对应权限码。刷新接口使用独立的 `Refresh` 认证方案。令牌验证同时检查数据库中的会话和当前用户状态。
+业务接口默认要求身份认证，菜单和权限接口还校验对应权限码。HTTP 与应用用例的授权检查在同一请求作用域复用用户和角色集合对应的权限快照；身份、角色变化或当前作用域内成功修改权限后重新读取。其他请求的权限变更在下一请求生效。后台调用须为每次工作建立独立作用域。刷新接口使用独立的 `Refresh` 认证方案。令牌验证同时检查数据库中的会话和当前用户状态。
 
 通用响应采用 `APIResponse<T>`，包含 `StatusCode`、`Message`、`Data`、`Code` 和 `TraceId`；分页数据使用 `PagedResponse<T>`。响应体中的业务状态码与 HTTP 状态码需要分别理解。撤销会话成功返回 HTTP 204。
 
@@ -148,6 +159,8 @@ $env:MY_TEST_POSTGRES_BIN = 'C:\Program Files\PostgreSQL\15\bin'
 夹具通过 `initdb` 和 `pg_ctl` 创建隔离的本地数据库集群，使用动态端口，在 `.test-artifacts` 下保留数据和日志用于排查。未找到工具时，相关测试标记为无法判定，不代表验证通过。
 
 ## 部署与可观测性
+
+仓库的 GitHub Actions 流水线会构建解决方案并运行单元、架构与集成测试；运行器安装 PostgreSQL 工具，数据库测试使用隔离集群。分支保护规则需在托管平台中将此检查设为合并条件。
 
 ```powershell
 docker build -t my-api .

@@ -1,5 +1,7 @@
 # 架构风险与质量审查
 
+> 本文为 2026-10-12 的历史评审快照，其中的路径、版本、测试结果与发现状态不代表当前代码。2026-10-23 优化已覆盖架构守卫、AppHost 配置、可选缓存探针、授权快照、窄事务接口与模型契约；后续维护以 [当前架构说明](../Architecture.md) 和 [优化记录](optimization-2026-10-23.md) 为准。旧文中的缓存日志依赖问题已修复，管理员与白名单放行描述已不适用。
+
 - **审查对象**：`E:\SourceCode\MySolution`（.NET 10 分层后端模板，MIT 许可）
 - **审查日期**：2026-10-12
 - **产出技能**：`architecture-visualization:risk-quality-reviewer` + `graphviz`

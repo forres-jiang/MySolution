@@ -3,22 +3,29 @@
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// PostgreSQL 主库：容器名 "postgres"，数据库名 "mydb"。
-// API 项目会通过 WithReference 拿到形如 ConnectionStrings__postgres 的环境变量，
-// 需要在 appsettings 中把 "postgres" 或 "Default" 映射到该键（见 README 说明）。
+// 密钥由 AppHost 的用户机密或 Parameters 配置提供，持续运行时必须保持稳定。
+var jwtSecret = builder.AddParameter("jwt-secret", secret: true);
+var encryptionKey = builder.AddParameter("encryption-key", secret: true);
+
 var postgres = builder.AddPostgres("postgres");
 var pgDb = postgres.AddDatabase("mydb");
-
-// Redis 缓存：容器名 "redis"。
-// API 项目通过 WithReference 注入 ConnectionStrings__redis；
-// 现有 RedisConfig:ConnectionString 可在 Program 里改用 GetConnectionString("redis") 读取。
 var redis = builder.AddRedis("redis");
 
-// API 项目：等待 PG 与 Redis 就绪后再启动，避免启动竞态。
+// 迁移进程只依赖数据库；成功退出后才启动正常服务。
+var migrations = builder.AddProject<Projects._01My_XXX_APIs>("migrations", launchProfileName: null)
+    .WithArgs("--migrate")
+    .WithEnvironment("DatabaseProviders__Default", "PostgreSQL")
+    .WithEnvironment("ConnectionStrings__Default", pgDb.Resource.ConnectionStringExpression)
+    .WaitFor(pgDb);
+
 builder.AddProject<Projects._01My_XXX_APIs>("api")
-    .WithReference(pgDb)
-    .WaitFor(pgDb)
+    .WithEnvironment("DatabaseProviders__Default", "PostgreSQL")
+    .WithEnvironment("ConnectionStrings__Default", pgDb.Resource.ConnectionStringExpression)
+    .WithEnvironment("RedisConfig__ConnectionString", redis.Resource.ConnectionStringExpression)
+    .WithEnvironment("AppConfig__PermissionDataCache", "1")
+    .WithEnvironment("JwtConfig__Secret", jwtSecret)
+    .WithEnvironment("APP_ENCRYPTION_KEY", encryptionKey)
     .WithReference(redis)
-    .WaitFor(redis);
+    .WaitForCompletion(migrations);
 
 builder.Build().Run();

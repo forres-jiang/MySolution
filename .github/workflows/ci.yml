@@ -1,0 +1,34 @@
+name: 构建与架构验证
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 准备隔离数据库工具
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql libpq-dev
+          echo "MY_TEST_POSTGRES_BIN=$(pg_config --bindir)" >> "$GITHUB_ENV"
+          test -x "$(pg_config --bindir)/initdb"
+          test -x "$(pg_config --bindir)/pg_ctl"
+      - name: 还原依赖
+        run: dotnet restore MySolution.sln
+      - name: 构建解决方案
+        run: dotnet build MySolution.sln --no-restore --configuration Release
+      - name: 验证领域规则与架构边界
+        run: dotnet test My.XXX.UnitTests/06My.XXX.UnitTests.csproj --no-build --no-restore --configuration Release
+      - name: 验证 HTTP 契约与真实数据库事务
+        run: dotnet test My.XXX.IntegrationTests/07My.XXX.IntegrationTests.csproj --no-build --no-restore --configuration Release

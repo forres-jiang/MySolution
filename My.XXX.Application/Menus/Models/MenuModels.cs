@@ -6,7 +6,7 @@ namespace My.XXX.Application.Menus.Models;
 /// <summary>新增菜单的应用层输入；wire 契约映射由组合根完成。</summary>
 public sealed class MenuCreation
 {
-    public string DisplayName { get; set; }
+    public required string DisplayName { get; set; }
     public string? Description { get; set; }
     public string? Icon { get; set; }
     public string? Url { get; set; }
@@ -45,7 +45,7 @@ public sealed record MenuListingQuery(string DisplayName, bool? IsAction, bool I
 public sealed class MenuView
 {
     public int Id { get; set; }
-    public string DisplayName { get; set; }
+    public required string DisplayName { get; set; }
     public string? Description { get; set; }
     public string? Icon { get; set; }
     public int Number { get; set; }
@@ -58,9 +58,9 @@ public sealed class MenuView
     public bool IsDisplay { get; set; }
     public bool IsAction { get; set; }
     public bool IsDeleted { get; set; }
-    public string CreatedBy { get; set; }
+    public required string CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string UpdatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool Checked { get; set; }
     public List<MenuView>? Actions { get; set; }

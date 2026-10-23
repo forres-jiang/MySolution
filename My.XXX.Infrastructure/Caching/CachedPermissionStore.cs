@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace My.XXX.Infrastructure.Caching;
 
-/// <summary>Caches role projections below the application service so every request still runs application rules.</summary>
+/// <summary>缓存角色权限投影；应用用例仍执行自己的授权规则。</summary>
 public sealed class CachedPermissionStore(IPermissionStore menus, IPermissionCache cache,
     IOptions<PermissionCacheOptions> options, ILogger<CachedPermissionStore> logger) : IPermissionStore
 {
@@ -62,7 +62,7 @@ public sealed class CachedPermissionStore(IPermissionStore menus, IPermissionCac
         {
             return await cache.GetAsync(key, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             Fallbacks.Add(1);
             logger.LogWarning(ex, "权限缓存读取失败，降级到数据库直读");
@@ -76,7 +76,7 @@ public sealed class CachedPermissionStore(IPermissionStore menus, IPermissionCac
         {
             await cache.SetAsync(key, codes, expiration, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning(ex, "权限缓存写入失败，跳过本次缓存");
         }

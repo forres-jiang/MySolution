@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 
 namespace My.XXX.Application.Menus;
 
-/// <summary>Owns the request context and transaction boundary for menu commands.</summary>
-public sealed class MenuCommandService(IAccessControlTransaction transaction, UseCaseAuthorization authorization, TimeProvider clock)
+/// <summary>负责菜单命令的调用者授权与事务边界。</summary>
+public sealed class MenuCommandService(IMenuTransaction transaction, UseCaseAuthorization authorization, TimeProvider clock)
 {
     private readonly MenuMutations mutations = new(clock);
 

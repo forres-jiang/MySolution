@@ -35,9 +35,11 @@ public static class StorageRegistration
             : ResolveConnectionString(redisConfig.ConnectionString, "Redis", configuration["APP_ENCRYPTION_KEY"]);
         var useCachedPermissionQuery = services.AddPermissionCaching(redisConnection,
             configuration.GetValue<PermissionDataCache>("AppConfig:PermissionDataCache") == PermissionDataCache.Redis);
-        // Redis 仅服务于权限缓存；未启用缓存时不让 Redis 故障影响就绪探针。
+        // Redis 仅服务于权限缓存，启用时纳入可降级依赖的诊断检查。
         if (useCachedPermissionQuery)
+        {
             services.AddRedisHealthChecks();
+        }
         return useCachedPermissionQuery;
     }
 

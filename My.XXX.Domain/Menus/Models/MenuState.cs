@@ -6,7 +6,7 @@ namespace My.XXX.Domain.Menus.Models;
 public sealed record MenuState : IMenuStructure
 {
     public int Id { get; init; }
-    public string DisplayName { get; init; }
+    public required string DisplayName { get; init; }
     public string? Description { get; init; }
     public string? Icon { get; init; }
     public int Number { get; init; }
@@ -15,9 +15,9 @@ public sealed record MenuState : IMenuStructure
     public bool IsDisplay { get; init; }
     public bool IsAction { get; init; }
     public bool IsDeleted { get; init; }
-    public string CreatedBy { get; init; }
+    public required string CreatedBy { get; init; }
     public DateTime CreatedAt { get; init; }
-    public string UpdatedBy { get; init; }
+    public string? UpdatedBy { get; init; }
     public DateTime? UpdatedAt { get; init; }
 
     public MenuState Copy() => (MenuState)MemberwiseClone();

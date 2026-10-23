@@ -13,8 +13,8 @@ public sealed record SessionRenewal(SessionTokens Tokens);
 public sealed class CurrentUserView
 {
     public required string UserId { get; init; }
-    public string UserName { get; init; }
-    public string Email { get; init; }
+    public string? UserName { get; init; }
+    public string? Email { get; init; }
     public required IReadOnlyList<string> Roles { get; init; }
     public required IReadOnlyList<Guid> RoleIds { get; init; }
 }

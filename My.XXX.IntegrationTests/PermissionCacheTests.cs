@@ -86,6 +86,34 @@ public sealed class PermissionCacheTests
     private static CachedPermissionStore Decorate(Store store, Cache cache) =>
         new(store, cache, Options.Create(new PermissionCacheOptions()), NullLogger<CachedPermissionStore>.Instance);
 
+    [TestMethod]
+    public async Task RedisFailuresFallBackToTheDatabaseAndDoNotLosePermissions()
+    {
+        var store = new Store();
+        var cache = new Cache
+        {
+            ReadFailure = new InvalidOperationException("模拟缓存读取故障。"),
+            WriteFailure = new InvalidOperationException("模拟缓存写入故障。")
+        };
+        var result = await Decorate(store, cache).GetPermissionCodesAsync(new() { Guid.NewGuid() });
+        CollectionAssert.AreEqual(new[] { "menu.get" }, result);
+        Assert.AreEqual(1, store.Reads);
+    }
+
+    [TestMethod]
+    public async Task RequestCancellationDuringCacheReadsOrWritesIsNotSwallowed()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        foreach (var reading in new[] { true, false })
+        {
+            var exception = new OperationCanceledException(cancellation.Token);
+            var cache = new Cache { ReadFailure = reading ? exception : null, WriteFailure = reading ? null : exception };
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+                Decorate(new Store(), cache).GetPermissionCodesAsync(new() { Guid.NewGuid() }, cancellation.Token));
+        }
+    }
+
     private sealed class Store : IPermissionStore
     {
         public int Reads;
@@ -102,10 +130,17 @@ public sealed class PermissionCacheTests
     {
         private readonly Dictionary<string, List<string>> values = new();
         public int Writes;
+        public Exception? ReadFailure { get; init; }
+        public Exception? WriteFailure { get; init; }
         public Task<List<string>?> GetAsync(string key, CancellationToken cancellationToken = default) =>
-            Task.FromResult(values.TryGetValue(key, out var value) ? value : null);
+            ReadFailure is { } failure ? Task.FromException<List<string>?>(failure)
+                : Task.FromResult(values.TryGetValue(key, out var value) ? value : null);
         public Task SetAsync(string key, List<string> value, TimeSpan expiration, CancellationToken cancellationToken = default)
         {
+            if (WriteFailure is { } failure)
+            {
+                return Task.FromException(failure);
+            }
             values[key] = value;
             Writes++;
             return Task.CompletedTask;

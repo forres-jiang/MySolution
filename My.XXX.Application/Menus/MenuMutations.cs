@@ -88,10 +88,22 @@ internal sealed class MenuMutations(TimeProvider clock)
         if (order == null) return Result.Fail(MenuErrors.InvalidOrder().ToError());
         var current = order.First(m => m.Id == input.CurrentId);
         if (!MenuHierarchy.CanPlace(menus, current.Id, current.ParentId, current.IsAction)) return Result.Fail(MenuErrors.InvalidParent().ToError());
+        var originalById = menus.ToDictionary(menu => menu.Id);
+        var timestamp = clock.GetUtcNow().UtcDateTime;
         for (var index = 0; index < order.Count; index++)
         {
-            var menu = order[index] with { Number = index, UpdatedBy = userId, UpdatedAt = clock.GetUtcNow().UtcDateTime };
-            if ((await session.Update(menu, cancellationToken)) != 1) return Result.Fail(MenuErrors.WriteFailed().ToError());
+            var candidate = order[index];
+            var original = originalById[candidate.Id];
+            // 未改变位置的节点保留原审计信息，减少全局锁内的数据库往返。
+            if (original.Number == index && original.ParentId == candidate.ParentId)
+            {
+                continue;
+            }
+            var menu = candidate with { Number = index, UpdatedBy = userId, UpdatedAt = timestamp };
+            if ((await session.Update(menu, cancellationToken)) != 1)
+            {
+                return Result.Fail(MenuErrors.WriteFailed().ToError());
+            }
         }
         return Result.Ok();
     }

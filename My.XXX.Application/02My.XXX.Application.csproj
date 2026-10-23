@@ -5,6 +5,7 @@
 		<RootNamespace>My.XXX.Application</RootNamespace>
 		<AssemblyName>My.XXX.Application</AssemblyName>
 		<Nullable>enable</Nullable>
+		<WarningsAsErrors>$(WarningsAsErrors);nullable</WarningsAsErrors>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

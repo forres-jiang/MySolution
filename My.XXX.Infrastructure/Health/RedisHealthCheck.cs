@@ -15,9 +15,9 @@ public sealed class RedisHealthCheck(IConnectionMultiplexer connection) : IHealt
             await connection.GetDatabase().PingAsync().WaitAsync(cancellationToken);
             return HealthCheckResult.Healthy();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
-            return HealthCheckResult.Unhealthy("Redis unavailable.", ex);
+            return HealthCheckResult.Degraded("Redis 不可用，权限查询已降级为数据库直读。", ex);
         }
     }
 }

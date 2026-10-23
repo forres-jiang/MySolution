@@ -57,7 +57,7 @@ public sealed class CleanArchitectureTests
     [TestMethod]
     public void MenuTransitionPreservesSnapshotAndValidatesClearingAndHierarchy()
     {
-        var rows = new List<MenuState> { new() { Id = 1, DisplayName = "root", Description = "keep", Icon = "old" }, new() { Id = 2, ParentId = 1 } };
+        var rows = new List<MenuState> { new() { Id = 1, CreatedBy = "test", DisplayName = "root", Description = "keep", Icon = "old" }, new() { Id = 2, ParentId = 1, DisplayName = "child", CreatedBy = "test" } };
         var now = new DateTime(2026, 1, 1);
         var updated = MenuTransitions.Update(rows, new() { Id = 1, DisplayName = " new ", ClearFields = new() { MenuOptionalField.Icon } }, "alice", now);
         Assert.IsTrue(updated.IsSuccess);

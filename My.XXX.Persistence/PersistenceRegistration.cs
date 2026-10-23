@@ -18,7 +18,12 @@ public static class PersistenceRegistration
         services.AddScoped<IRolePermissionStore, RolePermissionStore>();
         services.AddScoped<IMenuReadRepository, MenuReadRepository>();
         services.AddScoped<IPermissionStore, PermissionStore>();
-        services.AddScoped<IAccessControlTransaction, AccessControlTransaction>();
+        // 窄事务端口共用实例，避免同一作用域绕过嵌套事务保护。
+        services.AddScoped<AccessControlTransaction>();
+        services.AddScoped<IAccessControlTransaction>(provider => provider.GetRequiredService<AccessControlTransaction>());
+        services.AddScoped<IMenuTransaction>(provider => provider.GetRequiredService<AccessControlTransaction>());
+        services.AddScoped<IRoleMenuTransaction>(provider => provider.GetRequiredService<AccessControlTransaction>());
+        services.AddScoped<IPermissionTransaction>(provider => provider.GetRequiredService<AccessControlTransaction>());
         return services;
     }
     public static IServiceCollection AddPersistenceDatabases(this IServiceCollection services, string businessConnection,

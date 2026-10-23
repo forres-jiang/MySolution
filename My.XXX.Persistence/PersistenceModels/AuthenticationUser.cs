@@ -8,10 +8,10 @@ namespace My.XXX.Persistence.PersistenceModels;
 public sealed class AuthenticationUser
 {
     [PrimaryKey, Column, NotNull]
-    public string? UserId { get; set; }
+    public required string UserId { get; set; }
 
     [Column, NotNull]
-    public string? UserJson { get; set; }
+    public required string UserJson { get; set; }
 
     [Column]
     public bool Enabled { get; set; }

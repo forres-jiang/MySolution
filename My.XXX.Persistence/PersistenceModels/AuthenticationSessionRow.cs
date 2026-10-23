@@ -9,13 +9,13 @@ namespace My.XXX.Persistence.PersistenceModels;
 public sealed class AuthenticationSessionRow
 {
     [PrimaryKey, Column, NotNull]
-    public string? SessionId { get; set; }
+    public required string SessionId { get; set; }
 
     [Column, NotNull]
-    public string? UserId { get; set; }
+    public required string UserId { get; set; }
 
     [Column, NotNull]
-    public string? RefreshTokenId { get; set; }
+    public required string RefreshTokenId { get; set; }
 
     [Column]
     public DateTime ExpiresUtc { get; set; }

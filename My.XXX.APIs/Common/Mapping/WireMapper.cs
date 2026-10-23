@@ -18,8 +18,8 @@ public sealed partial class WireMapper
     public UserInfoResponse? ToUserInfoResponse(CurrentUserView? view) => view == null ? null : new UserInfoResponse
     {
         UserId = view.UserId,
-        UserName = view.UserName,
-        Email = view.Email,
+        UserName = view.UserName ?? string.Empty,
+        Email = view.Email ?? string.Empty,
         Roles = new List<string>(view.Roles),
         RoleIds = new List<Guid>(view.RoleIds),
         // 旧契约：GetRoles 响应始终携带空 Menus 数组。

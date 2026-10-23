@@ -1,5 +1,7 @@
 # 质量属性场景
 
+> 本文的证据状态属于历史评审快照，当前优化与验证结果见 [优化记录](optimization-2026-10-23.md)。
+
 - **配套文档**：`architecture-review.md`（发现清单）、`remediation-plan.md`（整改动作）
 - **用途**：把抽象的"架构好不好"转成**可判定的场景**——每个场景给出刺激、响应、度量与当前证据状态
 - **产出技能**：`architecture-visualization:risk-quality-reviewer`
